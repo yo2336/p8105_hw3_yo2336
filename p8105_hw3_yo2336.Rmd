@@ -91,7 +91,25 @@ knitr::kable(popular_table_df, caption = "Top 3 Products Ordered from Selected A
 
 Mean hour per each day
 ```{r}
+pink_lady_apple =
+instacart %>%
+  select(order_dow, order_hour_of_day, product_name) %>%
+  filter(product_name == "Pink Lady Apples") %>%
+  arrange(order_dow) %>%
+  group_by(order_dow) %>%
+  summarize(mean_order_hour = mean(order_hour_of_day)) %>%
+  rename("day" = "order_dow")
+knitr::kable(pink_lady_apple, caption = "Mean Hour of Day Pink Lady Apples are Ordered")
 
+coffee_ice_cream =
+  instacart %>%
+  select(order_dow, order_hour_of_day, product_name) %>%
+  filter(product_name == "Coffee Ice Cream") %>%
+  arrange(order_dow) %>%
+  group_by(order_dow) %>%
+  summarize(mean_order_hour = mean(order_hour_of_day)) %>%
+  rename("day" = "order_dow")
+knitr::kable(coffee_ice_cream, caption = "Mean Hour of Day Coffee Ice Creams are Ordered")
 ```
 
 
@@ -101,4 +119,61 @@ Load BRFSS data
 ```{r}
 data(brfss_smart2010)
 ```
+
+Clean BRFSS
+```{r}
+overall_health =
+  brfss_smart2010 %>%
+  janitor::clean_names() %>%
+  filter(topic == "Overall Health") %>%
+  mutate(response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent"),
+                           ordered = TRUE))
+```
+
+
+States with >= 7 observed locations in 2002 and 2010
+```{r}
+nrow(
+overall_health %>%
+  filter(year == 2002) %>%
+  count(locationabbr) %>%
+  mutate(n = n/5) %>%
+  filter(n >= 7))
+
+nrow(
+  overall_health %>%
+  filter(year == 2010) %>%
+  count(locationabbr) %>%
+  mutate(n = n/5) %>%
+  filter(n >= 7))
+```
+
+Excellent response data frame and plot
+```{r}
+excellent_df =
+  overall_health %>%
+  filter(response == "Excellent") %>%
+  group_by(year, locationabbr, data_value) %>%
+  summarize(mean_data_value = mean(data_value)) %>%
+  select(year, "state" = "locationabbr", mean_data_value)
+
+excellent_df %>%
+  ggplot(aes(x = year, y = mean_data_value, color = state)) +
+  geom_point() +
+  geom_line()
+```
+
+Plot for NY responses to overall health in 2006 and 2010
+```{r}
+overall_health %>%
+  filter(locationabbr == "NY", year == c(2006, 2010)) %>%
+  select(year, locationabbr, response, data_value) %>%
+  ggplot(aes(x = response, y = data_value)) +
+  geom_point() +
+  facet_grid(. ~ year) +
+  labs(title = "Distribution of Responses to Overall Health in NY")
+```
+
+
+# Problem 3
 
