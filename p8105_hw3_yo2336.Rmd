@@ -18,6 +18,10 @@ data("instacart")
 range(pull(instacart, aisle_id))
 count(instacart, aisle_id, aisle)
 
+```
+
+Aisle vs product plot
+```{r}
 aisle_df =
   instacart %>%
   count(aisle_id) %>%
@@ -31,7 +35,7 @@ aisle_df =
 ```
 
 
-Popular items
+Popular items per aisle
 ```{r}
 bake_ingr_df =
   instacart %>%
@@ -41,7 +45,6 @@ bake_ingr_df =
   arrange(desc(n)) %>%
   head(3) %>%
   mutate(rank = c(1, 2, 3)) %>%
-  relocate(rank) %>%
   pivot_wider(
     names_from = "aisle",
     values_from = "product_name"
@@ -70,7 +73,6 @@ pack_veg_fruit_df =
   arrange(desc(n)) %>%
   head(3) %>%
   mutate(rank = c(1, 2, 3)) %>%
-  relocate(rank) %>%
   pivot_wider(
     names_from = "aisle",
     values_from = "product_name"
@@ -80,8 +82,23 @@ pack_veg_fruit_df =
 popular_table_df = 
   left_join(bake_ingr_df, left_join(dog_food_care_df, pack_veg_fruit_df, by = "rank"), 
             by = "rank") %>%
-  rename(count = c(n, n.x, n.y))
+  janitor::clean_names() %>%
+  rename(count_baking = n, count_dog = n_x, count_packaged = n_y)
 
 knitr::kable(popular_table_df, caption = "Top 3 Products Ordered from Selected Aisles")
+```
+
+
+Mean hour per each day
+```{r}
+
+```
+
+
+# Problem 2
+
+Load BRFSS data
+```{r}
+data(brfss_smart2010)
 ```
 
