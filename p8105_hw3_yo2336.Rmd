@@ -19,6 +19,7 @@ data("instacart")
 
 nrow(instacart)
 ncol(instacart)
+names(instacart)
 
 ```
 
@@ -45,12 +46,13 @@ for how many products have been ordered from each aisle.
 ```{r}
 aisle_df =
   instacart %>%
-  count(aisle_id) %>%
-  filter(n > 10000) %>%
-  rename(number_ordered = n) %>%
+  count(aisle_id, name = "number_ordered") %>%
+  filter(number_ordered > 10000)
+  
+aisle_df %>%  
   ggplot(aes(x = aisle_id, y = number_ordered)) +
   geom_point() +
-  labs(title = "Products Ordered from Each Aisle with at least 10,000 Purchased")
+  labs(title = "Products Ordered from Each Aisle with at least 10,000 Purchased") +
   scale_x_continuous(
     breaks = c(0, 25, 50, 75, 100, 125))
 ```
@@ -255,6 +257,7 @@ accel_df =
 
 nrow(accel_df)
 ncol(accel_df)
+names(accel_df)
 ```
 
 The accelerometer data has total of 1444 variables for week, day, and activity per minute 
