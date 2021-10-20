@@ -229,7 +229,7 @@ Filtered to see data for New York state only and for years 2006 and 2010. Then c
 showing the distribution of the responses per year.
 ```{r}
 overall_health %>%
-  filter(state == "NY", year == c(2006, 2010)) %>%
+  filter(state == "NY", year %in% c(2006, 2010)) %>%
   select(year, state, response, data_value) %>%
   ggplot(aes(x = response, y = data_value)) +
   geom_boxplot() +
@@ -257,7 +257,7 @@ accel_df =
 
 nrow(accel_df)
 ncol(accel_df)
-names(accel_df)
+
 ```
 
 The accelerometer data has total of 1444 variables for week, day, and activity per minute 
