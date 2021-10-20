@@ -41,8 +41,8 @@ bake_ingr_df =
   instacart %>%
   select(product_name, aisle) %>%
   filter(aisle == "baking ingredients") %>%
-  count(aisle, product_name) %>%
-  arrange(desc(n)) %>%
+  count(aisle, product_name, name = "count_baking") %>%
+  arrange(desc(count_baking)) %>%
   head(3) %>%
   mutate(rank = c(1, 2, 3)) %>%
   pivot_wider(
@@ -55,8 +55,8 @@ dog_food_care_df =
   instacart %>%
   select(product_name, aisle) %>%
   filter(aisle == "dog food care") %>%
-  count(aisle, product_name) %>%
-  arrange(desc(n)) %>%
+  count(aisle, product_name, name = "count_dog") %>%
+  arrange(desc(count_dog)) %>%
   head(3) %>%
   mutate(rank = c(1, 2, 3)) %>%
   pivot_wider(
@@ -69,8 +69,8 @@ pack_veg_fruit_df =
   instacart %>%
   select(product_name, aisle) %>%
   filter(aisle == "packaged vegetables fruits") %>%
-  count(aisle, product_name) %>%
-  arrange(desc(n)) %>%
+  count(aisle, product_name, name = "count_packaged") %>%
+  arrange(desc(count_packaged)) %>%
   head(3) %>%
   mutate(rank = c(1, 2, 3)) %>%
   pivot_wider(
@@ -82,8 +82,7 @@ pack_veg_fruit_df =
 popular_table_df = 
   left_join(bake_ingr_df, left_join(dog_food_care_df, pack_veg_fruit_df, by = "rank"), 
             by = "rank") %>%
-  janitor::clean_names() %>%
-  rename(count_baking = n, count_dog = n_x, count_packaged = n_y)
+  janitor::clean_names()
 
 knitr::kable(popular_table_df, caption = "Top 3 Products Ordered from Selected Aisles")
 ```
@@ -92,23 +91,19 @@ knitr::kable(popular_table_df, caption = "Top 3 Products Ordered from Selected A
 Mean hour per each day
 ```{r}
 pink_lady_apple =
-instacart %>%
-  select(order_dow, order_hour_of_day, product_name) %>%
+  instacart %>%
+  select("day" = "order_dow", order_hour_of_day, product_name) %>%
   filter(product_name == "Pink Lady Apples") %>%
-  arrange(order_dow) %>%
-  group_by(order_dow) %>%
-  summarize(mean_order_hour = mean(order_hour_of_day)) %>%
-  rename("day" = "order_dow")
+  group_by(day) %>%
+  summarize(mean_order_hour = mean(order_hour_of_day))
 knitr::kable(pink_lady_apple, caption = "Mean Hour of Day Pink Lady Apples are Ordered")
 
 coffee_ice_cream =
   instacart %>%
-  select(order_dow, order_hour_of_day, product_name) %>%
+  select("day" = "order_dow", order_hour_of_day, product_name) %>%
   filter(product_name == "Coffee Ice Cream") %>%
-  arrange(order_dow) %>%
-  group_by(order_dow) %>%
-  summarize(mean_order_hour = mean(order_hour_of_day)) %>%
-  rename("day" = "order_dow")
+  group_by(day) %>%
+  summarize(mean_order_hour = mean(order_hour_of_day))
 knitr::kable(coffee_ice_cream, caption = "Mean Hour of Day Coffee Ice Creams are Ordered")
 ```
 
@@ -127,7 +122,8 @@ overall_health =
   janitor::clean_names() %>%
   filter(topic == "Overall Health") %>%
   mutate(response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent"),
-                           ordered = TRUE))
+                           ordered = TRUE)) %>%
+  rename("state" = "locationabbr", "county" = "locationdesc")
 ```
 
 
@@ -136,14 +132,14 @@ States with >= 7 observed locations in 2002 and 2010
 nrow(
 overall_health %>%
   filter(year == 2002) %>%
-  count(locationabbr) %>%
+  count(state) %>%
   mutate(n = n/5) %>%
   filter(n >= 7))
 
 nrow(
   overall_health %>%
   filter(year == 2010) %>%
-  count(locationabbr) %>%
+  count(state) %>%
   mutate(n = n/5) %>%
   filter(n >= 7))
 ```
@@ -153,9 +149,9 @@ Excellent response data frame and plot
 excellent_df =
   overall_health %>%
   filter(response == "Excellent") %>%
-  group_by(year, locationabbr, data_value) %>%
+  group_by(year, state, data_value) %>%
   summarize(mean_data_value = mean(data_value)) %>%
-  select(year, "state" = "locationabbr", mean_data_value)
+  select(-data_value)
 
 excellent_df %>%
   ggplot(aes(x = year, y = mean_data_value, color = state)) +
@@ -166,8 +162,8 @@ excellent_df %>%
 Plot for NY responses to overall health in 2006 and 2010
 ```{r}
 overall_health %>%
-  filter(locationabbr == "NY", year == c(2006, 2010)) %>%
-  select(year, locationabbr, response, data_value) %>%
+  filter(state == "NY", year == c(2006, 2010)) %>%
+  select(year, state, response, data_value) %>%
   ggplot(aes(x = response, y = data_value)) +
   geom_point() +
   facet_grid(. ~ year) +
@@ -176,4 +172,38 @@ overall_health %>%
 
 
 # Problem 3
+
+Load and clean data
+```{r}
+accel_df = 
+  read_csv("accel_data.csv") %>%
+  janitor::clean_names() %>%
+  mutate(week_type = case_when(
+    day %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday") ~ "weekday",
+    day %in% c("Saturday", "Sunday") ~ "weekend")) %>%
+  relocate(week, day_id, day, week_type)
+ 
+```
+
+total activity for each day
+```{r}
+total_activity_df = 
+  accel_df %>%
+  group_by(week, day) %>%
+  summarize(total_activity = sum(across(starts_with("activity"))))
+knitr::kable(total_activity_df, caption = "Total Activity for Each Day")
+```
+
+Plot of activity over 24 hour each day
+```{r}
+accel_df %>%
+  group_by(day_id, day) %>%
+  summarize(total_activity = sum(across(starts_with("activity")))) %>%
+  ggplot(aes(x = day_id, y = total_activity, color = day)) +
+  geom_point() +
+  geom_line() +
+  labs(title = "24-hour Activity for Each Day",
+       x = "Day",
+       y = "Total Activity")
+```
 
